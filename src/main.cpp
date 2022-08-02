@@ -6,7 +6,7 @@
 
 using namespace std;
 
-void solve(Board *board, vector<int> path, const uint64_t puttable, const Board *goal){
+void solve(Board *board, vector<int> &path, const uint64_t puttable, const Board *goal){
     if (board->player == goal->player && board->opponent == goal->opponent){
         cout << "solution found: ";
         for (const int policy: path)
