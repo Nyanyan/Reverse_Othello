@@ -85,10 +85,8 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
     uint64_t legal = board->get_legal() & goal_mask;
     if (legal){
         Flip flip;
-        uint64_t place;
-        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
-            place = 1ULL << cell;
-            if ((corner_mask & place) && (goal_opponent & place))
+        for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){;
+            if (corner_mask & goal_opponent & (1ULL << cell))
                 continue;
             calc_flip(&flip, board, cell);
             board->move_board(&flip);
