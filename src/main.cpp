@@ -41,52 +41,37 @@ inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d
     full_stability_d(discs, d7, d9);
 }
 
-inline uint64_t enhanced_stability(Board *board, uint64_t goal_mask){
-    uint64_t framed_mask = 0ULL;
-    uint64_t goal_mask_h = goal_mask & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t goal_mask_v = goal_mask & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t goal_mask_d = goal_mask & 0x007E7E7E7E7E7E00ULL;
-    framed_mask |= (goal_mask_h << 1) | (goal_mask_h >> 1);
-    framed_mask |= (goal_mask_v << 8) | (goal_mask_v >> 8);
-    framed_mask |= (goal_mask_d << 7) | (goal_mask_d >> 7);
-    framed_mask |= (goal_mask_d << 9) | (goal_mask_d >> 9);
-    framed_mask &= ~goal_mask;
-    uint64_t corner_stability = 0ULL;
-    corner_stability |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9);
-    corner_stability |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 7);
-    corner_stability |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 7);
-    corner_stability |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9);
-    uint64_t enhanced_discs = board->player | board->opponent | ~goal_mask;
+inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask, const uint64_t corner_mask){
     uint64_t full_h, full_v, full_d7, full_d9;
-    full_stability(enhanced_discs, &full_h, &full_v, &full_d7, &full_d9);
+    uint64_t discs = board->player | board->opponent;
+    full_stability(discs | ~goal_mask, &full_h, &full_v, &full_d7, &full_d9);
     full_h &= goal_mask;
     full_v &= goal_mask;
     full_d7 &= goal_mask;
     full_d9 &= goal_mask;
     uint64_t h, v, d7, d9;
     uint64_t stability = 0ULL, n_stability;
-    n_stability = (board->player | board->opponent) & (full_h & full_v & full_d7 & full_d9);
+    n_stability = discs & full_h & full_v & full_d7 & full_d9;
     while (n_stability & ~stability){
         stability |= n_stability;
         h = (stability >> 1) | (stability << 1) | full_h;
-        v = (stability >> HW) | (stability << HW) | full_v;
-        d7 = (stability >> HW_M1) | (stability << HW_M1) | full_d7;
-        d9 = (stability >> HW_P1) | (stability << HW_P1) | full_d9;
+        v = (stability >> 8) | (stability << 8) | full_v;
+        d7 = (stability >> 7) | (stability << 7) | full_d7;
+        d9 = (stability >> 9) | (stability << 9) | full_d9;
         n_stability = h & v & d7 & d9;
     }
-    return stability | corner_stability;
+    return stability | (discs & corner_mask);
 }
 
-void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask, const int goal_n_discs, const Board *goal){
+void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask, const uint64_t corner_mask, const int goal_n_discs, const Board *goal){
     if (player == 0 && board->player == goal->player && board->opponent == goal->opponent){
-        //cout << "solution found: ";
         for (const int policy: path)
             cout << idx_to_coord(policy);
         cout << endl;
         return;
     }
     uint64_t discs = board->player | board->opponent;
-    uint64_t stable = enhanced_stability(board, goal_mask);
+    uint64_t stable = enhanced_stability(board, goal_mask, corner_mask);
     if (player){
         if ((stable & board->player & goal->player) || (stable & board->opponent & goal->opponent))
             return;
@@ -101,7 +86,7 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
             calc_flip(&flip, board, cell);
             board->move_board(&flip);
             path.emplace_back(cell);
-                solve(board, path, player ^ 1, goal_mask, goal_n_discs, goal);
+                solve(board, path, player ^ 1, goal_mask, corner_mask, goal_n_discs, goal);
             path.pop_back();
             board->undo_board(&flip);
         }
@@ -128,12 +113,26 @@ int main(){
     }
     goal.print();
 
-    uint64_t goal_discs = goal.player | goal.opponent;
-    int n_discs = pop_count_ull(goal_discs);
+    uint64_t goal_mask = goal.player | goal.opponent;
+    uint64_t framed_mask = 0ULL;
+    uint64_t goal_mask_h = goal_mask & 0x7E7E7E7E7E7E7E7EULL;
+    uint64_t goal_mask_v = goal_mask & 0x00FFFFFFFFFFFF00ULL;
+    uint64_t goal_mask_d = goal_mask & 0x007E7E7E7E7E7E00ULL;
+    framed_mask |= (goal_mask_h << 1) | (goal_mask_h >> 1);
+    framed_mask |= (goal_mask_v << 8) | (goal_mask_v >> 8);
+    framed_mask |= (goal_mask_d << 7) | (goal_mask_d >> 7);
+    framed_mask |= (goal_mask_d << 9) | (goal_mask_d >> 9);
+    framed_mask &= ~goal_mask;
+    uint64_t corner_mask = 0ULL;
+    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9);
+    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 7);
+    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 7);
+    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9);
+    int n_discs = pop_count_ull(goal_mask);
     Board board = {0x0000000810000000ULL, 0x0000001008000000ULL};
     vector<int> path;
     uint64_t strt = tim();
-    solve(&board, path, player, goal_discs, n_discs, &goal);
+    solve(&board, path, player, goal_mask, corner_mask, n_discs, &goal);
     uint64_t elapsed = tim() - strt;
     cout << "solved in " << elapsed << " ms" << endl;
     cerr << "solved in " << elapsed << " ms" << endl;
