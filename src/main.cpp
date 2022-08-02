@@ -82,12 +82,10 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
     uint64_t stable = enhanced_stability(board, goal_mask);
     if ((stable & board->player & goal_opponent) || (stable & board->opponent & goal_player))
         return;
-    uint64_t legal = board->get_legal() & goal_mask;
+    uint64_t legal = board->get_legal() & goal_mask & ~(corner_mask & goal_opponent);
     if (legal){
         Flip flip;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){;
-            if (corner_mask & goal_opponent & (1ULL << cell))
-                continue;
             calc_flip(&flip, board, cell);
             board->move_board(&flip);
             path.emplace_back(cell);
