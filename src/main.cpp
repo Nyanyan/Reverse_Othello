@@ -70,7 +70,6 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
         cout << endl;
         return;
     }
-    uint64_t discs = board->player | board->opponent;
     uint64_t goal_player, goal_opponent;
     if (player){
         goal_player = goal->opponent;
