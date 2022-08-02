@@ -41,7 +41,7 @@ inline void full_stability(uint64_t discs, uint64_t *h, uint64_t *v, uint64_t *d
     full_stability_d(discs, d7, d9);
 }
 
-inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask, const uint64_t corner_mask){
+inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask){
     uint64_t full_h, full_v, full_d7, full_d9;
     uint64_t discs = board->player | board->opponent;
     full_stability(discs | ~goal_mask, &full_h, &full_v, &full_d7, &full_d9);
@@ -51,7 +51,7 @@ inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask, const
     full_d9 &= goal_mask;
     uint64_t h, v, d7, d9;
     uint64_t stability = 0ULL, n_stability;
-    n_stability = discs & full_h & full_v & full_d7 & full_d9;
+    n_stability = discs & (full_h & full_v & full_d7 & full_d9);
     while (n_stability & ~stability){
         stability |= n_stability;
         h = (stability >> 1) | (stability << 1) | full_h;
@@ -60,7 +60,7 @@ inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask, const
         d9 = (stability >> 9) | (stability << 9) | full_d9;
         n_stability = h & v & d7 & d9;
     }
-    return stability | (discs & corner_mask);
+    return stability;
 }
 
 void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask, const uint64_t corner_mask, const int goal_n_discs, const Board *goal){
@@ -71,18 +71,25 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
         return;
     }
     uint64_t discs = board->player | board->opponent;
-    uint64_t stable = enhanced_stability(board, goal_mask, corner_mask);
+    uint64_t goal_player, goal_opponent;
     if (player){
-        if ((stable & board->player & goal->player) || (stable & board->opponent & goal->opponent))
-            return;
+        goal_player = goal->opponent;
+        goal_opponent = goal->player;
     } else{
-        if ((stable & board->player & goal->opponent) || (stable & board->opponent & goal->player))
-            return;
+        goal_player = goal->player;
+        goal_opponent = goal->opponent;
     }
+    uint64_t stable = enhanced_stability(board, goal_mask);
+    if ((stable & board->player & goal_opponent) || (stable & board->opponent & goal_player))
+        return;
     uint64_t legal = board->get_legal() & goal_mask;
     if (legal){
         Flip flip;
+        uint64_t place;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){
+            place = 1ULL << cell;
+            if ((corner_mask & place) && (goal_opponent & place))
+                continue;
             calc_flip(&flip, board, cell);
             board->move_board(&flip);
             path.emplace_back(cell);
