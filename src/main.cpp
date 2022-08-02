@@ -60,8 +60,6 @@ inline uint64_t enhanced_stability(Board *board, uint64_t goal_mask){
         d9 = (stability >> HW_P1) | (stability << HW_P1) | full_d9;
         n_stability = h & v & d7 & d9;
     }
-    //board->print();
-    //bit_print_board(stability);
     return stability;
 }
 
@@ -73,7 +71,6 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
         cout << endl;
         return;
     }
-    
     uint64_t discs = board->player | board->opponent;
     uint64_t stable = enhanced_stability(board, goal_mask);
     if (player){
@@ -83,7 +80,6 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
         if ((stable & board->player & goal->opponent) || (stable & board->opponent & goal->player))
             return;
     }
-    
     uint64_t legal = board->get_legal() & goal_mask;
     if (legal){
         Flip flip;
