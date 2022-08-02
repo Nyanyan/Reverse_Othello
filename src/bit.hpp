@@ -172,9 +172,9 @@ end of modification
 
 
 #if USE_BUILTIN_POPCOUNT
-    #define	pop_count_ull(x) (int)__popcnt64(x)
-    #define pop_count_uint(x) (int)__popcnt(x)
-    #define pop_count_uchar(x) (int)__popcnt(x)
+    #define	pop_count_ull(x) (int)__builtin_popcountl(x)
+    #define pop_count_uint(x) (int)__builtin_popcount(x)
+    #define pop_count_uchar(x) (int)__builtin_popcount(x)
 #else
 
     inline int pop_count_ull(uint64_t x){

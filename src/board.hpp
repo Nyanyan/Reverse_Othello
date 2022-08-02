@@ -3,7 +3,6 @@
 #include "common.hpp"
 #include "mobility.hpp"
 #include "flip.hpp"
-#include "last_flip.hpp"
 using namespace std;
 
 uint32_t hash_rand_player[4][65536];
