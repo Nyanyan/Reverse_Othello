@@ -65,7 +65,7 @@ inline uint64_t enhanced_stability(Board *board, uint64_t goal_mask){
 
 void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask, const int goal_n_discs, const Board *goal){
     if (player == 0 && board->player == goal->player && board->opponent == goal->opponent){
-        cout << "solution found: ";
+        //cout << "solution found: ";
         for (const int policy: path)
             cout << idx_to_coord(policy);
         cout << endl;
