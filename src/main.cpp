@@ -126,10 +126,14 @@ int main(){
     framed_mask |= (goal_mask_d << 9) | (goal_mask_d >> 9);
     framed_mask &= ~goal_mask;
     uint64_t corner_mask = 0ULL;
-    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9);
-    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9);
+    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9) & (framed_mask >> 7);
+    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9) & (framed_mask << 7);
+    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 7) & (framed_mask << 9);
+    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 7) & (framed_mask >> 9);
+    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 7) & (framed_mask >> 9);
+    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 7) & (framed_mask << 9);
+    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9) & (framed_mask >> 7);
+    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9) & (framed_mask << 7);
     int n_discs = pop_count_ull(goal_mask);
     Board board = {0x0000000810000000ULL, 0x0000001008000000ULL};
     vector<int> path;
