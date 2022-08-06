@@ -3,8 +3,11 @@
 #include <string>
 #include "board.hpp"
 #include "util.hpp"
+#include "evaluate.hpp"
 
 using namespace std;
+
+int value_threshold;
 
 inline uint64_t full_stability_h(uint64_t full){
     full &= full >> 1;
@@ -64,6 +67,8 @@ inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask){
 }
 
 void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask, const uint64_t corner_mask, const int goal_n_discs, const Board *goal){
+    if (abs(mid_evaluate(board)) > value_threshold)
+        return;
     if (player == 0 && board->player == goal->player && board->opponent == goal->opponent){
         for (const int policy: path)
             cout << idx_to_coord(policy);
@@ -98,6 +103,9 @@ void solve(Board *board, vector<int> &path, int player, const uint64_t goal_mask
 int main(){
     bit_init();
     board_init();
+    evaluate_init("eval.egev");
+    cerr << "threshold: ";
+    cin >> value_threshold;
     /*
     Board goal = {0x0000000810000000ULL, 0x0000001008000000ULL};
     string in_path;
@@ -152,6 +160,7 @@ int main(){
     int n_discs = pop_count_ull(goal_mask);
     Board board = {0x0000000810000000ULL, 0x0000001008000000ULL};
     vector<int> path;
+    cerr << "start!" << endl;
     uint64_t strt = tim();
     solve(&board, path, player, goal_mask, corner_mask, n_discs, &goal);
     uint64_t elapsed = tim() - strt;
