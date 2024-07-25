@@ -174,14 +174,14 @@ int main(int argc, char* argv[]){
     corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_l7;
     corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_r7;
     corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_l7;
-    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_r9 & empty_mask_r7;
-    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_r9 & empty_mask_l7;
-    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_l9 & empty_mask_r7;
-    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_l9 & empty_mask_l7;
-    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_r7;
-    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_l7;
-    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_r7;
-    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_l7;
+    corner_mask |= empty_mask_l1 & empty_mask_r8 & empty_mask_r9 & empty_mask_r7;
+    corner_mask |= empty_mask_l1 & empty_mask_r8 & empty_mask_r9 & empty_mask_l7;
+    corner_mask |= empty_mask_l1 & empty_mask_r8 & empty_mask_l9 & empty_mask_r7;
+    corner_mask |= empty_mask_l1 & empty_mask_r8 & empty_mask_l9 & empty_mask_l7;
+    corner_mask |= empty_mask_l1 & empty_mask_l8 & empty_mask_r9 & empty_mask_r7;
+    corner_mask |= empty_mask_l1 & empty_mask_l8 & empty_mask_r9 & empty_mask_l7;
+    corner_mask |= empty_mask_l1 & empty_mask_l8 & empty_mask_l9 & empty_mask_r7;
+    corner_mask |= empty_mask_l1 & empty_mask_l8 & empty_mask_l9 & empty_mask_l7;
     corner_mask &= goal_mask;
 
     bit_print_board(goal_mask);
