@@ -115,23 +115,47 @@ void find_path(Board *board, std::vector<int> &path, int player, const uint64_t 
     }
 }
 
+bool input_board_line(std::string board_str, Board *board){
+    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+    if (board_str.length() != HW2 + 1){
+        std::cerr << "[ERROR] invalid argument" << std::endl;
+        return false;
+    }
+    int player = BLACK;
+    board->player = 0ULL;
+    board->opponent = 0ULL;
+    for (int i = 0; i < HW2; ++i){
+        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
+            board->player |= 1ULL << (HW2_M1 - i);
+        else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
+            board->opponent |= 1ULL << (HW2_M1 - i);
+    }
+    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
+        player = BLACK;
+    else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
+        player = WHITE;
+    else{
+        std::cerr << "[ERROR] invalid player argument" << std::endl;
+        return false;
+    }
+    if (player == WHITE)
+        std::swap(board->player, board->opponent);
+    return true;
+}
+
 int main(int argc, char* argv[]){
     init();
-    std::cout << "please input the board" << std::endl;
-    Board goal = input_board();
-    //goal.print();
-    for (int i = HW2_M1; i >= 0; --i){
-        if (1 & (goal.player >> i))
-            std::cout << "X ";
-        else if (1 & (goal.opponent >> i))
-            std::cout << "O ";
-        else
-            std::cout << ". ";
-        if (i % HW == 0)
-            std::cout << std::endl;
-    }
+    std::cout << "please input the board (X: black O: white)" << std::endl;
+    std::cout << "example: ------------------O--X---OOOXXX--OOOXXX---OOXX-----OX----------- X" << std::endl;
+    //Board goal = input_board();
+    std::string board_str;
+    getline(std::cin, board_str);
+    std::cout << board_str << std::endl;
+    Board goal;
+    if (!input_board_line(board_str, &goal))
+        return 1;
+    goal.print();
 
-    int player = 0;
     std::swap(goal.player, goal.opponent);
 
     uint64_t goal_mask = goal.player | goal.opponent; // legal candidate
@@ -165,7 +189,7 @@ int main(int argc, char* argv[]){
     Board board = {0x0000000810000000ULL, 0x0000001008000000ULL};
     std::vector<int> path;
     uint64_t strt = tim();
-    find_path(&board, path, player, goal_mask, corner_mask, n_discs, &goal);
+    find_path(&board, path, BLACK, goal_mask, corner_mask, n_discs, &goal);
     uint64_t elapsed = tim() - strt;
     std::cout << "solved in " << elapsed << " ms" << std::endl;
     std::cerr << "solved in " << elapsed << " ms" << std::endl;
