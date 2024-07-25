@@ -19,6 +19,33 @@ void init(){
     flip_init();
 }
 
+bool input_board_line(std::string board_str, Board *board, int *player){
+    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
+    if (board_str.length() != HW2 + 1){
+        std::cerr << "[ERROR] invalid argument" << std::endl;
+        return false;
+    }
+    board->player = 0ULL;
+    board->opponent = 0ULL;
+    for (int i = 0; i < HW2; ++i){
+        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
+            board->player |= 1ULL << (HW2_M1 - i);
+        else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
+            board->opponent |= 1ULL << (HW2_M1 - i);
+    }
+    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
+        *player = BLACK;
+    else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
+        *player = WHITE;
+    else{
+        std::cerr << "[ERROR] invalid player argument" << std::endl;
+        return false;
+    }
+    if (*player == WHITE)
+        std::swap(board->player, board->opponent);
+    return true;
+}
+
 void output_transcript(std::vector<int> &transcript){
     for (int &move: transcript){
         std::cout << idx_to_coord(move);
@@ -83,115 +110,91 @@ inline uint64_t enhanced_stability(Board *board, const uint64_t goal_mask){
     return stability;
 }
 
-void find_path(Board *board, std::vector<int> &path, int player, const uint64_t goal_mask, const uint64_t corner_mask, const int goal_n_discs, const Board *goal){
-    if (player == 0 && board->player == goal->player && board->opponent == goal->opponent){
-        for (const int policy: path)
-            std::cout << idx_to_coord(policy);
-        std::cout << std::endl;
+void find_path(Board *board, std::vector<int> &path, int player, const uint64_t goal_mask, const uint64_t corner_mask, const int goal_n_discs, const Board *goal, const int goal_player, uint64_t *n_nodes, uint64_t *n_solutions){
+    ++(*n_nodes);
+    if (player == goal_player && board->player == goal->player && board->opponent == goal->opponent){
+        output_transcript(path);
+        ++(*n_solutions);
         return;
     }
-    uint64_t goal_player, goal_opponent;
-    if (player){
-        goal_player = goal->opponent;
-        goal_opponent = goal->player;
+    uint64_t goal_board_player, goal_board_opponent;
+    if (player != goal_player){
+        goal_board_player = goal->opponent;
+        goal_board_opponent = goal->player;
     } else{
-        goal_player = goal->player;
-        goal_opponent = goal->opponent;
+        goal_board_player = goal->player;
+        goal_board_opponent = goal->opponent;
     }
     uint64_t stable = enhanced_stability(board, goal_mask);
-    if ((stable & board->player & goal_opponent) || (stable & board->opponent & goal_player))
+    if ((stable & board->player & goal_board_opponent) || (stable & board->opponent & goal_board_player))
         return;
-    uint64_t legal = board->get_legal() & goal_mask & ~(corner_mask & goal_opponent);
+    uint64_t legal = board->get_legal() & goal_mask & ~(corner_mask & goal_board_opponent);
     if (legal){
         Flip flip;
         for (uint_fast8_t cell = first_bit(&legal); legal; cell = next_bit(&legal)){;
             calc_flip(&flip, board, cell);
             board->move_board(&flip);
             path.emplace_back(cell);
-                find_path(board, path, player ^ 1, goal_mask, corner_mask, goal_n_discs, goal);
+                find_path(board, path, player ^ 1, goal_mask, corner_mask, goal_n_discs, goal, goal_player, n_nodes, n_solutions);
             path.pop_back();
             board->undo_board(&flip);
         }
     }
 }
 
-bool input_board_line(std::string board_str, Board *board){
-    board_str.erase(std::remove_if(board_str.begin(), board_str.end(), ::isspace), board_str.end());
-    if (board_str.length() != HW2 + 1){
-        std::cerr << "[ERROR] invalid argument" << std::endl;
-        return false;
-    }
-    int player = BLACK;
-    board->player = 0ULL;
-    board->opponent = 0ULL;
-    for (int i = 0; i < HW2; ++i){
-        if (board_str[i] == 'B' || board_str[i] == 'b' || board_str[i] == 'X' || board_str[i] == 'x' || board_str[i] == '0' || board_str[i] == '*')
-            board->player |= 1ULL << (HW2_M1 - i);
-        else if (board_str[i] == 'W' || board_str[i] == 'w' || board_str[i] == 'O' || board_str[i] == 'o' || board_str[i] == '1')
-            board->opponent |= 1ULL << (HW2_M1 - i);
-    }
-    if (board_str[HW2] == 'B' || board_str[HW2] == 'b' || board_str[HW2] == 'X' || board_str[HW2] == 'x' || board_str[HW2] == '0' || board_str[HW2] == '*')
-        player = BLACK;
-    else if (board_str[HW2] == 'W' || board_str[HW2] == 'w' || board_str[HW2] == 'O' || board_str[HW2] == 'o' || board_str[HW2] == '1')
-        player = WHITE;
-    else{
-        std::cerr << "[ERROR] invalid player argument" << std::endl;
-        return false;
-    }
-    if (player == WHITE)
-        std::swap(board->player, board->opponent);
-    return true;
-}
-
 int main(int argc, char* argv[]){
     init();
-    std::cout << "please input the board (X: black O: white)" << std::endl;
-    std::cout << "example: ------------------O--X---OOOXXX--OOOXXX---OOXX-----OX----------- X" << std::endl;
+    std::cerr << "please input the board (X: black O: white)" << std::endl;
+    std::cerr << "example: ------------------O--X---OOOXXX--OOOXXX---OOXX-----OX----------- X" << std::endl;
     //Board goal = input_board();
     std::string board_str;
     getline(std::cin, board_str);
     std::cout << board_str << std::endl;
     Board goal;
-    if (!input_board_line(board_str, &goal))
+    int goal_player;
+    if (!input_board_line(board_str, &goal, &goal_player))
         return 1;
     goal.print();
 
-    std::swap(goal.player, goal.opponent);
-
     uint64_t goal_mask = goal.player | goal.opponent; // legal candidate
-    uint64_t framed_mask = 0ULL; // wall
-    uint64_t goal_mask_h = goal_mask & 0x7E7E7E7E7E7E7E7EULL;
-    uint64_t goal_mask_v = goal_mask & 0x00FFFFFFFFFFFF00ULL;
-    uint64_t goal_mask_d = goal_mask & 0x007E7E7E7E7E7E00ULL;
-    framed_mask |= (goal_mask_h << 1) | (goal_mask_h >> 1);
-    framed_mask |= (goal_mask_v << 8) | (goal_mask_v >> 8);
-    framed_mask |= (goal_mask_d << 7) | (goal_mask_d >> 7);
-    framed_mask |= (goal_mask_d << 9) | (goal_mask_d >> 9);
-    framed_mask &= ~goal_mask;
     uint64_t corner_mask = 0ULL; // cells that work as corner (non-flippable cells)
-    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask >> 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask << 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask >> 8) & (framed_mask << 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask >> 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask >> 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask >> 1) & (framed_mask << 8) & (framed_mask << 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask >> 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask << 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask >> 8) & (framed_mask << 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask >> 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask >> 9) & (framed_mask << 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9) & (framed_mask >> 7);
-    corner_mask |= (framed_mask << 1) & (framed_mask << 8) & (framed_mask << 9) & (framed_mask << 7);
+    uint64_t empty_mask_r1 = ((~goal_mask & 0xFEFEFEFEFEFEFEFEULL) >> 1) | 0x8080808080808080ULL;
+    uint64_t empty_mask_l1 = ((~goal_mask & 0x7F7F7F7F7F7F7F7FULL) << 1) | 0x0101010101010101ULL;
+    uint64_t empty_mask_r8 = ((~goal_mask & 0xFFFFFFFFFFFFFF00ULL) >> 8) | 0xFF00000000000000ULL;
+    uint64_t empty_mask_l8 = ((~goal_mask & 0x00FFFFFFFFFFFFFFULL) << 8) | 0x00000000000000FFULL;
+    uint64_t empty_mask_r7 = ((~goal_mask & 0x7F7F7F7F7F7F7F00ULL) >> 7) | 0xFF01010101010101ULL;
+    uint64_t empty_mask_l7 = ((~goal_mask & 0x00FEFEFEFEFEFEFEULL) << 7) | 0x80808080808080FFULL;
+    uint64_t empty_mask_r9 = ((~goal_mask & 0xFEFEFEFEFEFEFE00ULL) >> 9) | 0x01010101010101FFULL;
+    uint64_t empty_mask_l9 = ((~goal_mask & 0x007F7F7F7F7F7F7FULL) << 9) | 0xFF80808080808080ULL;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_r9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_r9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_l9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_l9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_r9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_r9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_l9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_r8 & empty_mask_l9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_r9 & empty_mask_l7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_r7;
+    corner_mask |= empty_mask_r1 & empty_mask_l8 & empty_mask_l9 & empty_mask_l7;
+    corner_mask &= goal_mask;
+
+    bit_print_board(goal_mask);
+    bit_print_board(corner_mask);
+
     int n_discs = pop_count_ull(goal_mask);
     Board board = {0x0000000810000000ULL, 0x0000001008000000ULL};
     std::vector<int> path;
     uint64_t strt = tim();
-    find_path(&board, path, BLACK, goal_mask, corner_mask, n_discs, &goal);
+    uint64_t n_nodes = 0, n_solutions = 0;
+    find_path(&board, path, BLACK, goal_mask, corner_mask, n_discs, &goal, goal_player, &n_nodes, &n_solutions);
     uint64_t elapsed = tim() - strt;
-    std::cout << "solved in " << elapsed << " ms" << std::endl;
-    std::cerr << "solved in " << elapsed << " ms" << std::endl;
+    std::cout << "found " << n_solutions << " solutions in " << elapsed << " ms " << n_nodes << " nodes" << std::endl;
+    std::cerr << "found " << n_solutions << " solutions in " << elapsed << " ms " << n_nodes << " nodes" << std::endl;
     return 0;
 }
