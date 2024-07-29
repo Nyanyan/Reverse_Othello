@@ -184,8 +184,8 @@ int main(int argc, char* argv[]){
     corner_mask |= empty_mask_l1 & empty_mask_l8 & empty_mask_l9 & empty_mask_l7;
     corner_mask &= goal_mask;
 
-    bit_print_board(goal_mask);
-    bit_print_board(corner_mask);
+    //bit_print_board(goal_mask);
+    //bit_print_board(corner_mask);
 
     int n_discs = pop_count_ull(goal_mask);
     Board board = {0x0000000810000000ULL, 0x0000001008000000ULL};
